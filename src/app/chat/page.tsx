@@ -123,9 +123,19 @@ export default function ChatPage() {
       <div className="max-w-2xl mx-auto p-4">
         <audio ref={audioRef} src="/sounds/bip.mp3" preload="auto" />
 
-        <h1 className="text-2xl font-bold mb-4">💬 Chat Online Realtime</h1>
+        <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <img
+            src="https://ik.imagekit.io/t3zs29g4z/IMG-20230709-WA0028.jpg"
+            alt="Logo"
+            className="fixed top-4 right-4 w-20 h-20 rounded-full shadow-xl border-2 border-white object-cover z-50"
+          />
+          💬 Chat Online Realtime
+        </h1>
 
-        <form onSubmit={kirimPesan} className="flex flex-col gap-2 mb-4">
+        <form
+          onSubmit={kirimPesan}
+          className="flex flex-col gap-2 mb-4 relative"
+        >
           <div className="flex gap-2">
             <input
               value={pengirim}
@@ -133,13 +143,6 @@ export default function ChatPage() {
               placeholder="Nama"
               className="border p-3 rounded w-1/3 bg-white text-black dark:bg-gray-800 dark:text-white text-lg"
             />
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition duration-200 text-white px-6 py-3 rounded-lg text-lg shadow-md"
-              style={{ height: "100%" }}
-            >
-              Kirim 💬
-            </button>
           </div>
           <textarea
             value={pesan}
@@ -148,6 +151,12 @@ export default function ChatPage() {
             className="border p-3 rounded resize-none min-h-[60px] max-h-[200px] overflow-auto bg-white text-black dark:bg-gray-800 dark:text-white text-lg"
             rows={6}
           />
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition duration-200 text-white px-6 py-3 rounded-lg text-lg shadow-md self-end mt-2"
+          >
+            Kirim 💬
+          </button>
         </form>
 
         <div className="space-y-2">
@@ -164,7 +173,10 @@ export default function ChatPage() {
             <div key={c.id} className="border p-3 rounded bg-gray-800 shadow">
               <div className="text-sm text-gray-400">
                 <strong>{c.pengirim}</strong> •{" "}
-                {c.waktu?.toDate?.().toLocaleTimeString("id-ID") ?? "⏳"}
+                {c.waktu?.toDate?.().toLocaleString("id-ID", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                }) ?? "⏳"}
               </div>
               <div>{c.pesan}</div>
             </div>
