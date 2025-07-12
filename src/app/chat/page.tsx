@@ -14,12 +14,21 @@ import {
   onSnapshot,
   DocumentData,
   QueryDocumentSnapshot,
+  Timestamp,
 } from "firebase/firestore";
 
+// Define Chat type
+type Chat = {
+  id: string;
+  pengirim: string;
+  pesan: string;
+  waktu?: Timestamp;
+};
+
 export default function ChatPage() {
-  const [pengirim, setPengirim] = useState("Anonim");
+  const [pengirim, setPengirim] = useState("Bunda");
   const [pesan, setPesan] = useState("");
-  const [chatList, setChatList] = useState<any[]>([]);
+  const [chatList, setChatList] = useState<Chat[]>([]);
   const [lastDoc, setLastDoc] =
     useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -30,8 +39,13 @@ export default function ChatPage() {
     const chatRef = collection(db, "chat");
     const q = query(chatRef, orderBy("waktu", "desc"), limit(100));
     const snap = await getDocs(q);
-    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    const data: Chat[] = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Omit<Chat, "id">),
+    }));
     data.forEach((d) => loadedIds.current.add(d.id));
+
     setChatList(data);
     setLastDoc(snap.docs[snap.docs.length - 1]);
     if (snap.docs.length < 100) setHasMore(false);
@@ -47,8 +61,12 @@ export default function ChatPage() {
       limit(100)
     );
     const snap = await getDocs(q);
-    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const data: Chat[] = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Omit<Chat, "id">),
+    }));
     data.forEach((d) => loadedIds.current.add(d.id));
+
     setChatList((prev) => [...prev, ...data]);
     setLastDoc(snap.docs[snap.docs.length - 1]);
     if (snap.docs.length < 100) setHasMore(false);
@@ -68,7 +86,11 @@ export default function ChatPage() {
 
       if (!loadedIds.current.has(doc.id)) {
         loadedIds.current.add(doc.id);
-        setChatList((prev) => [doc.data(), ...prev]);
+        const newChat: Chat = {
+          id: doc.id,
+          ...(doc.data() as Omit<Chat, "id">),
+        };
+        setChatList((prev) => [newChat, ...prev]);
         audioRef.current?.play();
       }
     });
@@ -78,6 +100,9 @@ export default function ChatPage() {
 
   useEffect(() => {
     loadChats();
+
+    // Aktifkan dark mode otomatis saat pertama kali buka
+    document.documentElement.classList.add("dark");
   }, []);
 
   const kirimPesan = async (e: React.FormEvent) => {
@@ -94,55 +119,57 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 bg-gray-900 min-h-screen text-white">
-      <audio ref={audioRef} src="/sounds/bip.mp3" preload="auto" />
+    <div className="min-h-screen bg-black text-white dark:bg-black dark:text-white">
+      <div className="max-w-2xl mx-auto p-4">
+        <audio ref={audioRef} src="/sounds/bip.mp3" preload="auto" />
 
-      <h1 className="text-2xl font-bold mb-4">💬 Chat Online Realtime</h1>
+        <h1 className="text-2xl font-bold mb-4">💬 Chat Online Realtime</h1>
 
-      <form onSubmit={kirimPesan} className="flex gap-2 mb-4">
-        <input
-          value={pengirim}
-          onChange={(e) => setPengirim(e.target.value)}
-          placeholder="Nama"
-          className="bg-gray-800 border border-gray-700 p-2 rounded text-white w-1/4"
-        />
-        <input
-          value={pesan}
-          onChange={(e) => setPesan(e.target.value)}
-          placeholder="Ketik pesan..."
-          className="bg-gray-800 border border-gray-700 p-2 rounded text-white flex-1"
-        />
-        <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 rounded">
-          Kirim
-        </button>
-      </form>
-
-      <div className="space-y-2">
-        {hasMore && (
-          <button
-            onClick={loadMoreChats}
-            className="bg-gray-800 text-white text-sm px-3 py-1 rounded border border-gray-600"
-          >
-            ⬇️ Lihat Pesan Sebelumnya
-          </button>
-        )}
-
-        {chatList.map((c, i) => (
-          <div
-            key={i}
-            className="border border-gray-700 p-3 rounded bg-gray-800 shadow"
-          >
-            <div className="text-sm text-gray-400">
-              <strong>{c.pengirim}</strong> •{" "}
-              {c.waktu && typeof c.waktu.toDate === "function" ? (
-                c.waktu.toDate().toLocaleTimeString("id-ID")
-              ) : (
-                <span className="animate-pulse">⏳</span>
-              )}
-            </div>
-            <div className="text-white">{c.pesan}</div>
+        <form onSubmit={kirimPesan} className="flex flex-col gap-2 mb-4">
+          <div className="flex gap-2">
+            <input
+              value={pengirim}
+              onChange={(e) => setPengirim(e.target.value)}
+              placeholder="Nama"
+              className="border p-3 rounded w-1/3 bg-white text-black dark:bg-gray-800 dark:text-white text-lg"
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition duration-200 text-white px-6 py-3 rounded-lg text-lg shadow-md"
+              style={{ height: "100%" }}
+            >
+              Kirim 💬
+            </button>
           </div>
-        ))}
+          <textarea
+            value={pesan}
+            onChange={(e) => setPesan(e.target.value)}
+            placeholder="Ketik pesan..."
+            className="border p-3 rounded resize-none min-h-[60px] max-h-[200px] overflow-auto bg-white text-black dark:bg-gray-800 dark:text-white text-lg"
+            rows={6}
+          />
+        </form>
+
+        <div className="space-y-2">
+          {hasMore && (
+            <button
+              onClick={loadMoreChats}
+              className="bg-gray-700 text-white text-sm px-3 py-1 rounded"
+            >
+              ⬇️ Lihat Pesan Sebelumnya
+            </button>
+          )}
+
+          {chatList.map((c) => (
+            <div key={c.id} className="border p-3 rounded bg-gray-800 shadow">
+              <div className="text-sm text-gray-400">
+                <strong>{c.pengirim}</strong> •{" "}
+                {c.waktu?.toDate?.().toLocaleTimeString("id-ID") ?? "⏳"}
+              </div>
+              <div>{c.pesan}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
