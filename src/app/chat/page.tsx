@@ -16,10 +16,20 @@ import {
   QueryDocumentSnapshot,
 } from "firebase/firestore";
 
+// ✅ Tipe data eksplisit untuk item chat
+interface ChatItem {
+  id: string;
+  pengirim: string;
+  pesan: string;
+  waktu?: {
+    toDate: () => Date;
+  };
+}
+
 export default function ChatPage() {
   const [pengirim, setPengirim] = useState("Anonim");
   const [pesan, setPesan] = useState("");
-  const [chatList, setChatList] = useState<any[]>([]);
+  const [chatList, setChatList] = useState<ChatItem[]>([]);
   const [lastDoc, setLastDoc] =
     useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -30,10 +40,15 @@ export default function ChatPage() {
     const chatRef = collection(db, "chat");
     const q = query(chatRef, orderBy("waktu", "desc"), limit(100));
     const snap = await getDocs(q);
-    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const data: ChatItem[] = snap.docs.map((doc) => ({
+      id: doc.id,
+      pengirim: doc.data().pengirim,
+      pesan: doc.data().pesan,
+      waktu: doc.data().waktu,
+    }));
     data.forEach((d) => loadedIds.current.add(d.id));
     setChatList(data);
-    setLastDoc(snap.docs[snap.docs.length - 1]);
+    setLastDoc(snap.docs[snap.docs.length - 1] ?? null);
     if (snap.docs.length < 100) setHasMore(false);
   };
 
@@ -47,10 +62,15 @@ export default function ChatPage() {
       limit(100)
     );
     const snap = await getDocs(q);
-    const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const data: ChatItem[] = snap.docs.map((doc) => ({
+      id: doc.id,
+      pengirim: doc.data().pengirim,
+      pesan: doc.data().pesan,
+      waktu: doc.data().waktu,
+    }));
     data.forEach((d) => loadedIds.current.add(d.id));
     setChatList((prev) => [...prev, ...data]);
-    setLastDoc(snap.docs[snap.docs.length - 1]);
+    setLastDoc(snap.docs[snap.docs.length - 1] ?? null);
     if (snap.docs.length < 100) setHasMore(false);
   };
 
@@ -68,7 +88,13 @@ export default function ChatPage() {
 
       if (!loadedIds.current.has(doc.id)) {
         loadedIds.current.add(doc.id);
-        setChatList((prev) => [doc.data(), ...prev]);
+        const newChat: ChatItem = {
+          id: doc.id,
+          pengirim: doc.data().pengirim,
+          pesan: doc.data().pesan,
+          waktu: doc.data().waktu,
+        };
+        setChatList((prev) => [newChat, ...prev]);
         audioRef.current?.play();
       }
     });
@@ -127,9 +153,9 @@ export default function ChatPage() {
           </button>
         )}
 
-        {chatList.map((c, i) => (
+        {chatList.map((c) => (
           <div
-            key={i}
+            key={c.id}
             className="border border-gray-700 p-3 rounded bg-gray-800 shadow"
           >
             <div className="text-sm text-gray-400">

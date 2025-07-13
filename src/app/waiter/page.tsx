@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
+import Image from "next/image";
 
 interface MenuItem {
   id: string;
@@ -127,11 +128,14 @@ export default function WaiterPage() {
         {/* Nota Sementara (cetak) */}
         <section className="mt-10 print:block">
           <div className="hidden print:block text-center mb-2">
-            <img
+            <Image
               src="/logo.png"
               alt="Logo"
-              className="mx-auto w-16 h-auto mb-1"
+              width={64}
+              height={64}
+              className="mx-auto mb-1"
             />
+
             <div className="text-[12px] font-bold">Angkringan Pak Donal</div>
             <div className="text-[10px]">Jl. merdeka ---</div>
           </div>
